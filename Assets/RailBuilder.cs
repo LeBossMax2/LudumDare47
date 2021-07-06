@@ -5,6 +5,14 @@ using UnityEngine.EventSystems;
 
 public class RailBuilder : MonoBehaviour
 {
+    [System.Serializable]
+    public enum BrushType
+    {
+        TRACK,
+        WOOKCUTTER
+    }
+
+    public BrushType brush;
     public Camera cam;
     public LineRenderer selectionLine;
     public Plane ground = new Plane(Vector3.up, Vector3.up * 0.5f);
@@ -24,6 +32,22 @@ public class RailBuilder : MonoBehaviour
     private void Start()
     {
         selectionLine.enabled = false;
+    }
+
+    public void SetTrackBrush(bool active)
+    {
+        if (active)
+        {
+            brush = BrushType.TRACK;
+        }
+    }
+
+    public void SetWoodCutterBrush(bool active)
+    {
+        if (active)
+        {
+            brush = BrushType.WOOKCUTTER;
+        }
     }
 
     private Vector2Int raycast(Vector3 screenPos)
@@ -74,52 +98,76 @@ public class RailBuilder : MonoBehaviour
         }
     }
 
+    public void OnClick(BaseEventData e)
+    {
+        if (brush == BrushType.WOOKCUTTER)
+        {
+            var ev = (PointerEventData)e;
+
+            var trackpos = this.raycast(ev.position);
+
+            if (tracks.IsRail(trackpos) && tracks.GetTrack(trackpos).IsStraight())
+            {
+                tracks.PutStop(trackpos);
+            }
+        }
+    }
+
     public void OnBeginDrag(BaseEventData e)
     {
-        var ev = (PointerEventData)e;
-        
-        var trackpos = this.raycast(ev.position);
-
-        if (tracks.IsRail(trackpos))
+        if (brush == BrushType.TRACK)
         {
-            points.Clear();
-            points.Add(trackpos);
-            selectionLine.enabled = true;
-            selectionLine.positionCount = 1;
-            selectionLine.SetPosition(0, new Vector3(trackpos.x, 0.6f, trackpos.y));
-            e.Use();
+            var ev = (PointerEventData)e;
+
+            var trackpos = this.raycast(ev.position);
+
+            if (tracks.IsRail(trackpos))
+            {
+                points.Clear();
+                points.Add(trackpos);
+                selectionLine.enabled = true;
+                selectionLine.positionCount = 1;
+                selectionLine.SetPosition(0, new Vector3(trackpos.x, 0.6f, trackpos.y));
+                e.Use();
+            }
         }
     }
 
     public void OnDrag(BaseEventData e)
     {
-        var ev = (PointerEventData)e;
-        if (points.Count > 0)
+        if (brush == BrushType.TRACK)
         {
-            var trackPos = this.raycast(ev.position);
-            addTracks(trackPos);
-            e.Use();
+            var ev = (PointerEventData)e;
+            if (points.Count > 0)
+            {
+                var trackPos = this.raycast(ev.position);
+                addTracks(trackPos);
+                e.Use();
+            }
         }
     }
 
     public void OnEndDrag(BaseEventData e)
     {
-        var ev = (PointerEventData)e;
-
-        if (points.Count > 0)
+        if (brush == BrushType.TRACK)
         {
-            addTracks(this.raycast(ev.position));
+            var ev = (PointerEventData)e;
 
-            if (points.Count > 1 && tracks.IsRail(points[points.Count - 1]))
+            if (points.Count > 0)
             {
-                tracks.AddTracks(points);
+                addTracks(this.raycast(ev.position));
+
+                if (points.Count > 1 && tracks.IsRail(points[points.Count - 1]))
+                {
+                    tracks.AddTracks(points);
+                }
+
+                selectionLine.positionCount = 0;
+                selectionLine.enabled = false;
+                points.Clear();
+
+                e.Use();
             }
-
-            selectionLine.positionCount = 0;
-            selectionLine.enabled = false;
-            points.Clear();
-
-            e.Use();
         }
     }
 }

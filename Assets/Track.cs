@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -59,5 +60,10 @@ public class Track : MonoBehaviour
             pos = this.end;
             trackpos += this.next;
         }
+    }
+
+    public bool IsStraight()
+    {
+        return prev == next * -1;
     }
 }

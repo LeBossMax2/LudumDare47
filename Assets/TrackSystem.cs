@@ -7,8 +7,11 @@ public class TrackSystem : MonoBehaviour
 {
     public Track straightPrefab;
     public Track anglePrefab;
+    public TrainStop woodCutterPrefab;
 
     private readonly Dictionary<Vector2Int, Track> tracks = new Dictionary<Vector2Int, Track>();
+
+    private readonly Dictionary<Vector2Int, TrainStop> stops = new Dictionary<Vector2Int, TrainStop>();
 
     private void Awake()
     {
@@ -16,11 +19,21 @@ public class TrackSystem : MonoBehaviour
         {
             tracks.Add(Vector2Int.RoundToInt(new Vector2(t.transform.position.x, t.transform.position.z)), t);
         }
+
+        foreach (TrainStop t in GetComponentsInChildren<TrainStop>())
+        {
+            stops.Add(Vector2Int.RoundToInt(new Vector2(t.transform.position.x, t.transform.position.z)), t);
+        }
     }
 
     public bool IsRail(Vector2Int pos)
     {
         return tracks.ContainsKey(pos);
+    }
+
+    public Track GetTrack(Vector2Int pos)
+    {
+        return tracks[pos];
     }
 
     public void UpdatePosition(ref Vector2Int trackpos, ref Vector3 pos, float deltaPos)
@@ -121,5 +134,15 @@ public class TrackSystem : MonoBehaviour
             }
         }
         this.tracks[p] = t;
+    }
+
+    public void PutStop(Vector2Int trackpos)
+    {
+        Track t = tracks[trackpos];
+        var pos = new Vector3(trackpos.x, 0, trackpos.y);
+
+        var baseRot = Quaternion.LookRotation(new Vector3(t.next.x, 0, t.next.y));
+        TrainStop stop = Instantiate(woodCutterPrefab, pos, baseRot, this.transform);
+        stops.Add(trackpos, stop);
     }
 }
